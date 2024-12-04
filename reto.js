@@ -1,27 +1,36 @@
-function resolveCombination(initialCombination, moves) {
-  let digits = initialCombination.split("").map(Number);
-  let position = 0;
+const fs = require("fs");
+function isValidPassword(password) {
+  let hasLetters = false;
+  let lastChar = "";
+  let lastDigit = -1;
 
-  for (let move of moves) {
-    switch (move) {
-      case "R":
-        position = (position + 1) % digits.length;
-        break;
-      case "L":
-        position = (position - 1 + digits.length) % digits.length;
-        break;
-      case "U":
-        digits[position] = (digits[position] + 1) % 10;
-        break;
-      case "D":
-        digits[position] = (digits[position] - 1 + 10) % 10;
-        break;
+  for (let char of password) {
+    if (/[0-9]/.test(char)) {
+      if (hasLetters) return false;
+      let digit = Number(char);
+      if (digit < lastDigit) return false;
+      lastDigit = digit;
+    } else if (/[a-z]/.test(char)) {
+      hasLetters = true;
+      if (char < lastChar) return false;
+      lastChar = char;
+    } else {
+      return false;
     }
   }
-  return digits.join("");
+  return true;
 }
 
-console.log(resolveCombination("000", "URURD"));
-console.log(
-  resolveCombination("528934712834", "URDURUDRUDLLLLUUDDUDUDUDLLRRRR")
-);
+function main(filePath) {
+  const data = readFileSync(filePath, "utf8");
+  const passwords = data.split("\n");
+  let validPasswords = 0;
+  let invalidCount = 0;
+
+  passwords.forEach((password) =>
+    isValidPassword(password) ? validPasswords++ : invalidCount++
+  );
+  console.log(`submit ${validPasswords}true${invalidCount}false`);
+}
+
+main("log.txt");
