@@ -1,36 +1,31 @@
 const fs = require("fs");
-function isValidPassword(password) {
-  let hasLetters = false;
-  let lastChar = "";
-  let lastDigit = -1;
 
-  for (let char of password) {
-    if (/[0-9]/.test(char)) {
-      if (hasLetters) return false;
-      let digit = Number(char);
-      if (digit < lastDigit) return false;
-      lastDigit = digit;
-    } else if (/[a-z]/.test(char)) {
-      hasLetters = true;
-      if (char < lastChar) return false;
-      lastChar = char;
-    } else {
-      return false;
-    }
+function calcSteps(instructions) {
+  let position = 0;
+  let steps = 0;
+
+  while (position >= 0 && position < instructions.length) {
+    const jump = instructions[position];
+    instructions[position]++;
+    position += jump;
+    steps++;
   }
-  return true;
+  return steps;
 }
 
-function main(filePath) {
-  const data = readFileSync(filePath, "utf8");
-  const passwords = data.split("\n");
-  let validPasswords = 0;
-  let invalidCount = 0;
+fs.readFile("trace.txt", "utf8", (err, data) => {
+  if (err) return console.log("Error al leer el archivo");
 
-  passwords.forEach((password) =>
-    isValidPassword(password) ? validPasswords++ : invalidCount++
-  );
-  console.log(`submit ${validPasswords}true${invalidCount}false`);
-}
+  const lines = data.split("\n");
+  let totalSteps = 0;
+  let lastLineSteps = 0;
 
-main("log.txt");
+  lines.forEach((line) => {
+    const instructions = line.split(" ").map(Number);
+    const steps = calcSteps(instructions);
+    totalSteps += steps;
+    lastLineSteps = steps;
+  });
+
+  console.log(`submit: ${totalSteps}-${lastLineSteps}`);
+});
