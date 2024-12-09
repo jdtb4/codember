@@ -1,31 +1,48 @@
 const fs = require("fs");
 
-function calcSteps(instructions) {
-  let position = 0;
-  let steps = 0;
-
-  while (position >= 0 && position < instructions.length) {
-    const jump = instructions[position];
-    instructions[position]++;
-    position += jump;
-    steps++;
+fs.readFile("network.txt", "utf-8", (err, data) => {
+  if (err) {
+    console.log("Error reading file");
+    return;
   }
-  return steps;
-}
 
-fs.readFile("trace.txt", "utf8", (err, data) => {
-  if (err) return console.log("Error al leer el archivo");
+  try {
+    const connections = JSON.parse(data);
+    const nodes = new Set();
+    connections.forEach(([a, b]) => {
+      nodes.add(a);
+      nodes.add(b);
+    });
 
-  const lines = data.split("\n");
-  let totalSteps = 0;
-  let lastLineSteps = 0;
+    const networks = [];
+    connections.forEach(([a, b]) => {
+      const matchingNetworks = networks.filter(
+        (network) => network.has(a) || network.has(b)
+      );
 
-  lines.forEach((line) => {
-    const instructions = line.split(" ").map(Number);
-    const steps = calcSteps(instructions);
-    totalSteps += steps;
-    lastLineSteps = steps;
-  });
+      if (matchingNetworks.length > 0) {
+        const mergedNetwork = new Set();
+        matchingNetworks.forEach((network) => {
+          network.forEach((node) => mergedNetwork.add(node));
+          networks.splice(networks.indexOf(network), 1);
+        });
+        mergedNetwork.add(a);
+        mergedNetwork.add(b);
+        networks.push(mergedNetwork);
+      } else {
+        networks.push(new Set([a, b]));
+      }
+    });
 
-  console.log(`submit: ${totalSteps}-${lastLineSteps}`);
+    const destroyedNetworks = networks.filter((network) => network.size >= 1);
+    const destroyedNodes = new Set(
+      destroyedNetworks.flatMap((network) => Array.from(network))
+    );
+    const savedNodes = Array.from(nodes).filter(
+      (node) => !destroyedNodes.has(node)
+    );
+    console.log("submit", savedNodes.sort((a, b) => a - b).join(","));
+  } catch (parseError) {
+    console.log("Error parsing file", parseError.message);
+  }
 });
